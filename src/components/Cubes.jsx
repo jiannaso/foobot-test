@@ -25,7 +25,7 @@ export const Cubes = () => {
     const [playerBlockCount, setPlayerBlockCount] = useState(0);
     const [playerNames] = useState(['Player 1', 'Player 2']);
 
-    const playerTurnText = `Current Turn: ${playerNames[currentPlayer - 1]}`;
+    const playerTurnText = `Turn: ${playerNames[currentPlayer - 1]}`;
 
     // event listeners
     const handleKeyDown = (e) => {
@@ -134,7 +134,7 @@ export const Cubes = () => {
     return (
         <>
             {/* UI */}
-            <Text position={[0, 5, 0]} fontSize={1}>
+            <Text position={[0, 5, 0]} fontSize={1} color={'black'}>
                 {playerTurnText}
             </Text>
 
