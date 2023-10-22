@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { useRef, useCallback, useState, useEffect } from "react"
 import { Edges, Text } from "@react-three/drei"
-import { SocketManager, currentAtom, playersAtom, socket, cubesAtom } from "./SocketManager";
+import { SocketManager, currentAtom, playersAtom, socket, cubesAtom, colorAtom } from "./SocketManager";
 import { useAtom, atom } from "jotai";
 
 // Sides of Cube
@@ -15,25 +15,21 @@ const faceDirection = [
 ]
 
 
-export const Cubes = () => {
+export const Cubes = ({color, ...props}) => {
+    const userColor = color;
+    // console.log(userColor);
     const [updatedCubes] = useAtom(cubesAtom);
     const [player] = useAtom(playersAtom);
+    const curr = useAtom(currentAtom);
+    const prevColor = useAtom(colorAtom);
+    console.log("check color atom:" + prevColor[0]);
 
     const [hover, setHover] = useState(null)
     const [cubes, setCubes] = useState([]);
     const [isShiftPressed, setIsShiftPressed] = useState(false);
 
-    //keep track of players + block count
-    // var starting = 0;
-    // if(currentAtom != playersAtom) {
-    //     starting += 1;
-    // }
-
-    // console.log("starting" + starting);
-    // console.log(currentAtom);
-    // console.log(playersAtom);
-    const [currentPlayer, setCurrentPlayer] = useState(1);
-    const [playerBlockCount, setPlayerBlockCount] = useState(0);
+    const [currentPlayer, setCurrentPlayer] = useState(curr[0]);
+    const [playerBlockCount, setPlayerBlockCount] = useState(1);
     const [playerNames] = useState(['player 1', 'player 2']);
 
     const playerTurnText = `${playerNames[currentPlayer - 1]}`;
@@ -96,7 +92,7 @@ export const Cubes = () => {
 
         if (isShiftPressed) {
 
-            if (playerBlockCount <= 2) {
+            if (playerBlockCount <= 8) {
                 setCubes((prevCubes) => {
                     const updatedCubes = [...prevCubes];
 
@@ -122,16 +118,16 @@ export const Cubes = () => {
 
         if (!hover || isShiftPressed || e.delta > 10) return;
 
-        if (playerBlockCount <= 2) {
+        if (playerBlockCount <= 8) {
             const voxel = new THREE.Mesh(new THREE.BoxGeometry, new THREE.MeshStandardMaterial({ color: 'white' }));
             voxel.position.copy(hover)
 
             //Add to array
             setCubes((prevCubes) => [...prevCubes, { mesh: voxel }]);
             setPlayerBlockCount((prevCount) => prevCount + 1);
-            console.log("check cubes");
-            console.log(cubes);
-            console.log(updatedCubes);
+            // console.log("check updated cubes");
+            // console.log(cubes);
+            // console.log(updatedCubes);
             socket.emit("cubes", hover);
             createMesh(updatedCubes);
         } else {
@@ -141,40 +137,49 @@ export const Cubes = () => {
 
     function createMesh(positions) {
         positions.forEach((position, index) => {
-            console.log("positions" + index);
+            // console.log("positions" + index);
             const voxel = new THREE.Mesh(new THREE.BoxGeometry, new THREE.MeshStandardMaterial({ color: 'white' }));
             voxel.position.copy(position)
             // bricks.push({mesh: voxel});
             setBricks((prevBricks) => [...prevBricks, { mesh: voxel }]);
         });
 
-        console.log("new mesh");
-        console.log(bricks);
+        // console.log("new mesh");
+        // console.log(bricks);
+        setCubes(bricks);
     };
 
     //player control
     const togglePlayer = () => {
+        if(player == 1) {
+            console.log("emitted");
+            socket.emit("color", userColor);
+        }
+        console.log("OG player:" + currentPlayer);
         setCurrentPlayer((prevPlayer) => (prevPlayer === 1 ? 2 : 1));
         setPlayerBlockCount(0);
-        console.log(currentPlayer);
-        socket.emit("current", currentPlayer);
+        console.log("changed to player:" + currentPlayer);
+        socket.emit("current", (currentPlayer === 1 ? 2 : 1));
+        
     };
 
     return (
         <>
         <SocketManager/>
             {/* UI */}
-            <Text position={[0, 6.5, 0]} fontSize={.4} color={'white'}>
+            <Text position={[0, 7, 0]} fontSize={.4} color={'gray'}>
                 TURN
             </Text>
-            <Text position={[0, 5.5, 0]} fontSize={1} color={'white'}>
-                {playerTurnText}
+            <Text position={[0, 6, 0]} fontSize={1} color={'black'}>
+                {curr[0] == player ? "your turn" : "their turn"}
             </Text>
-            <Text position={[0, 4.5, 0]} fontSize={.4} color={'white'}>
-                moves left: {3-playerBlockCount}
+            <Text position={[0, 5, 0]} fontSize={.4} color={'gray'}>
+                moves left: {((9-playerBlockCount) + playerBlockCount%3)/3}
             </Text>
-            <Text position={[0, 3.25, 0]} fontSize={.4} color={'white'}>
-                you are player {player}
+            <Text position={[0, 4.25, 0]} fontSize={.4} color={'gray'}>
+            </Text>
+            <Text position={[0, 3.5, 0]} fontSize={.4} color={'black'}>
+                hi player {player}{player == 1 ? ". set the tone." : ". match their vision."}
             </Text>
             
 
@@ -190,13 +195,15 @@ export const Cubes = () => {
                     {[...Array(6)].map((_, index) => (
                         <meshStandardMaterial
                             key={index}
-                            // attach={`material-${index}`}
-                            // color={cube.faceIndex === index ? "#1069C4" : "#b1dce3"}
+                            attach={`material-${index}`}
+                            // color={brick.faceIndex === index ? "#1069C4" : "#b1dce3"}
+                            color={ player == 1 ? userColor : prevColor[0]}
+
                         />
                     ))}
                     <boxGeometry />
                     <Edges visible={true} scale={1} threshold={15} renderOrder={1000}>
-                        <meshBasicMaterial transparent color="#grey" side={THREE.DoubleSide} />
+                        <meshBasicMaterial transparent color="gray" side={THREE.DoubleSide} />
                     </Edges>
                 </mesh>
             ))}
@@ -206,9 +213,9 @@ export const Cubes = () => {
             {hover && (
                 //box
                 <mesh position={hover} onClick={addCube}>
-                    <meshBasicMaterial color="#ff0000" opacity={0.1} transparent={true} />
+                    <meshBasicMaterial color={userColor} opacity={.4} transparent={true} />
                     <boxGeometry />
-                    <Edges />
+                    <Edges color={userColor}/>
                 </mesh>
             )}
 

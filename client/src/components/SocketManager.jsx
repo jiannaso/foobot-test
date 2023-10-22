@@ -9,13 +9,14 @@ export const socket = io("http://localhost:3001");
 export const playersAtom = atom([0]);
 export const cubesAtom = atom([]);
 export const currentAtom = atom([]);
-
-
+export const colorAtom = atom([]);
 
 export const SocketManager = () => {
     const [_players, setPlayers] = useAtom(playersAtom);
     const [_cubes, setCubes] = useAtom(cubesAtom);
     const [_current, setCurrent] = useAtom(currentAtom);
+    const [_color, setColor] = useAtom(colorAtom);
+
 
     useEffect (() => {
         function onConnect() {
@@ -35,16 +36,30 @@ export const SocketManager = () => {
             console.log("player number", value);
         }
 
-        function onCubes(value) {
-            setCubes(value);
+        function onColor(value) {
+            setColor(value);
+        }
+
+        function onCubes(values) {
+            // const local = [];
+
+            // values.forEach((value) => {
+            //     let loader = new THREE.ObjectLoader();
+            //     let newMesh = loader.parse(value);
+            //     console.log(newMesh);
+            //     local.push(newMesh);
+
+            // });
+
+            // console.log(local);
+            setCubes(values);
+            // console.log(cubesAtom);
             console.log("socket manager received cubes");
-            console.log(value);
         }
 
         function onCurrent(value) {
             setCurrent(value);
-            console.log("current");
-            console.log(value);
+            console.log("current player:" + value);
         }
 
         //bind events to right function
@@ -54,6 +69,8 @@ export const SocketManager = () => {
         socket.on("players", onPlayers);
         socket.on("cubes", onCubes);
         socket.on("current", onCurrent);
+        socket.on("color", onColor);
+
 
         //bind events
         return () => {
@@ -63,6 +80,7 @@ export const SocketManager = () => {
             socket.off("players", onPlayers);
             socket.off("cubes", onCubes);
             socket.off("current", onCurrent);
+            socket.off("color", onColor);
         }
     }, []);
 };
