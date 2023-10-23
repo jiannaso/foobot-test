@@ -92,7 +92,7 @@ export const Cubes = ({color, ...props}) => {
 
         if (isShiftPressed) {
 
-            if (playerBlockCount <= 8) {
+            if (playerBlockCount <= 9) {
                 setCubes((prevCubes) => {
                     const updatedCubes = [...prevCubes];
 
@@ -118,7 +118,7 @@ export const Cubes = ({color, ...props}) => {
 
         if (!hover || isShiftPressed || e.delta > 10) return;
 
-        if (playerBlockCount <= 8) {
+        if (playerBlockCount <= 9) {
             const voxel = new THREE.Mesh(new THREE.BoxGeometry, new THREE.MeshStandardMaterial({ color: 'white' }));
             voxel.position.copy(hover)
 
@@ -130,6 +130,7 @@ export const Cubes = ({color, ...props}) => {
             // console.log(updatedCubes);
             socket.emit("cubes", hover);
             createMesh(updatedCubes);
+            console.log("block count: " + playerBlockCount);
         } else {
             togglePlayer();
         }
@@ -151,15 +152,15 @@ export const Cubes = ({color, ...props}) => {
 
     //player control
     const togglePlayer = () => {
+        socket.emit("current", (currentPlayer === 1 ? 2 : 1));
         if(player == 1) {
             console.log("emitted");
             socket.emit("color", userColor);
         }
         console.log("OG player:" + currentPlayer);
-        setCurrentPlayer((prevPlayer) => (prevPlayer === 1 ? 2 : 1));
+        setCurrentPlayer(player);
         setPlayerBlockCount(0);
         console.log("changed to player:" + currentPlayer);
-        socket.emit("current", (currentPlayer === 1 ? 2 : 1));
         
     };
 
@@ -168,24 +169,23 @@ export const Cubes = ({color, ...props}) => {
         <SocketManager/>
             {/* UI */}
             <Text position={[0, 7, 0]} fontSize={.4} color={'gray'}>
-                TURN
+                SilentGameBot
             </Text>
             <Text position={[0, 6, 0]} fontSize={1} color={'black'}>
                 {curr[0] == player ? "your turn" : "their turn"}
             </Text>
             <Text position={[0, 5, 0]} fontSize={.4} color={'gray'}>
-                moves left: {((9-playerBlockCount) + playerBlockCount%3)/3}
-            </Text>
-            <Text position={[0, 4.25, 0]} fontSize={.4} color={'gray'}>
-            </Text>
-            <Text position={[0, 3.5, 0]} fontSize={.4} color={'black'}>
+                {/* moves left: {((9-playerBlockCount) + playerBlockCount%3)/3} */}
                 hi player {player}{player == 1 ? ". set the tone." : ". match their vision."}
             </Text>
+            
             
 
             {/* cubes */}
             {bricks.map((brick, index) => (
                 <mesh
+                    receiveShadow
+                    castShadow
                     key={index}
                     position={brick.mesh.position}
                     onPointerMove={(e) => onMove(e, index)}
@@ -213,9 +213,9 @@ export const Cubes = ({color, ...props}) => {
             {hover && (
                 //box
                 <mesh position={hover} onClick={addCube}>
-                    <meshBasicMaterial color={userColor} opacity={.4} transparent={true} />
+                    <meshBasicMaterial color={player == 1 ? userColor : prevColor[0]} opacity={.4} transparent={true} />
                     <boxGeometry />
-                    <Edges color={userColor}/>
+                    <Edges color={player == 1 ? userColor : prevColor[0]}/>
                 </mesh>
             )}
 
@@ -224,7 +224,7 @@ export const Cubes = ({color, ...props}) => {
             <gridHelper />
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerMove={onMove} onPointerOut={onOut} >
                 <planeGeometry args={[1000, 1000]} />
-                <meshStandardMaterial color="#white" />
+                <meshStandardMaterial color="white" />
             </mesh>
 
         </>

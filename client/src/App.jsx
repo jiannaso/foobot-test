@@ -10,6 +10,7 @@ import { useControls } from "leva";
 
 // environment styling: https://codesandbox.io/s/dh2jc?file=/src/App.js:1464-1469
 function App() {
+  const [player] = useAtom(playersAtom);
   const prevColor = useAtom(colorAtom);
   console.log("check color atom in app:" + prevColor[0]);
 
@@ -24,8 +25,9 @@ function App() {
     <>
     <SocketManager/>
     <Canvas shadows camera={{ position: [-5, 12, 13], fov: 50 }}>
-      {enabled && <SoftShadows {...config} />}
-      <fog attach="fog" args={["white", 0, 100]} />
+      {player == 1 ? (enabled && <SoftShadows {...config} />) : (<group></group>)}
+      {player == 1 ? (<fog attach="fog" args={[config.color, 0, 100]} />) : 
+      (<fog attach="fog" args={[prevColor[0], 0, 100]} /> )}
       <ambientLight intensity={0.5} />
       <directionalLight castShadow position={[2.5, 8, 5]} intensity={1.5} shadow-mapSize={1024}>
         <orthographicCamera attach="shadow-camera" args={[-10, 10, -10, 10, 0.1, 50]} />
