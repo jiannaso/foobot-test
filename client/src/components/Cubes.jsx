@@ -152,7 +152,7 @@ export const Cubes = ({color, ...props}) => {
 
     //player control
     const togglePlayer = () => {
-        socket.emit("current", (currentPlayer === 1 ? 2 : 1));
+        socket.emit("current", (curr[0] === 1 ? 2 : 1));
         if(player == 1) {
             console.log("emitted");
             socket.emit("color", userColor);
@@ -169,7 +169,7 @@ export const Cubes = ({color, ...props}) => {
         <SocketManager/>
             {/* UI */}
             <Text position={[0, 7, 0]} fontSize={.4} color={'gray'}>
-                SilentGameBot
+                silent game bot
             </Text>
             <Text position={[0, 6, 0]} fontSize={1} color={'black'}>
                 {curr[0] == player ? "your turn" : "their turn"}
